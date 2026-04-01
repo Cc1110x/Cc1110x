@@ -1,0 +1,64 @@
+const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const bodyParser = require('body-parser');
+
+const app = express();
+app.use(bodyParser.json());
+app.use(express.static('public'));
+
+const db = new sqlite3.Database('./db.db');
+
+// 创建用户表
+db.run(`
+CREATE TABLE IF NOT EXISTS users (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ username TEXT,
+ password TEXT,
+ coins INTEGER DEFAULT 1000,
+ vip INTEGER DEFAULT 0
+)
+`);
+
+// VIP计算
+function getVIP(coins){
+ if(coins >= 50000) return 4;
+ if(coins >= 20000) return 3;
+ if(coins >= 5000) return 2;
+ if(coins >= 1000) return 1;
+ return 0;
+}
+
+// 注册
+app.post('/register', (req,res)=>{
+ const { username,password } = req.body;
+ db.run(`INSERT INTO users (username,password) VALUES (?,?)`,
+  [username,password],
+  err=> err ? res.send('失败') : res.send('成功'));
+});
+
+// 登录
+app.post('/login',(req,res)=>{
+ const { username,password } = req.body;
+ db.get(`SELECT * FROM users WHERE username=? AND password=?`,
+  [username,password],
+  (err,row)=> row ? res.json(row) : res.send('失败'));
+});
+
+// 更新金币 + VIP
+app.post('/updateCoins',(req,res)=>{
+ const { username, coins } = req.body;
+ const vip = getVIP(coins);
+
+ db.run(`UPDATE users SET coins=?,vip=? WHERE username=?`,
+  [coins,vip,username],
+  ()=> res.json({coins,vip}));
+});
+
+// 获取用户
+app.get('/user/:name',(req,res)=>{
+ db.get(`SELECT * FROM users WHERE username=?`,
+  [req.params.name],
+  (err,row)=>res.json(row));
+});
+
+app.listen(3000, ()=>console.log('http://localhost:3000'));
