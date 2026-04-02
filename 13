@@ -1,0 +1,4 @@
+const balanceEl = document.getElementById("balance");
+if (balanceEl) {
+  balanceEl.innerText = balance;
+}
