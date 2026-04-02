@@ -1,0 +1,67 @@
+const vipLevels = [0,1000,5000,20000,50000];
+
+function updateUI(){
+ fetch('/user/'+localStorage.getItem('user'))
+ .then(r=>r.json())
+ .then(d=>{
+  user.innerText = d.username;
+  coins.innerText = d.coins;
+  vipLevel.innerText = d.vip;
+
+  updateVIPBar(d.coins,d.vip);
+ });
+}
+
+function updateVIPBar(coins,vip){
+ let min = vipLevels[vip];
+ let max = vipLevels[vip+1] || min;
+ let percent = (coins-min)/(max-min)*100;
+ if(vip===4) percent=100;
+
+ document.getElementById('vipProgress').style.width = percent+"%";
+}
+
+function triggerVIPUpgrade(oldVip,newVip){
+ if(newVip<=oldVip) return;
+
+ document.getElementById('vipProgress').classList.add('vip-upgrade-glow');
+
+ let popup = document.getElementById('vipPopup');
+ popup.style.display='block';
+
+ setTimeout(()=>{
+  popup.style.display='none';
+ },2000);
+}
+
+function play(){
+ let coins = parseInt(localStorage.getItem('coins'));
+ let oldVip = parseInt(localStorage.getItem('vip'));
+
+ coins += 500;
+
+ fetch('/updateCoins',{
+  method:'POST',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({
+   username:localStorage.getItem('user'),
+   coins:coins
+  })
+ })
+ .then(r=>r.json())
+ .then(d=>{
+  localStorage.setItem('coins',d.coins);
+  localStorage.setItem('vip',d.vip);
+
+  triggerVIPUpgrade(oldVip,d.vip);
+  updateUI();
+ });
+}
+
+if(window.location.pathname.includes("lobby")){
+ updateUI();
+}
+
+function goGame(){
+ location='game.html';
+}
