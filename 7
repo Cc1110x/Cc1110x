@@ -1,0 +1,37 @@
+<h2>登录</h2>
+<input id="user"><br>
+<input id="pass" type="password"><br>
+
+<button onclick="login()">登录</button>
+<button onclick="reg()">注册</button>
+
+<script>
+function login(){
+ fetch('/login',{
+  method:'POST',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({
+   username:user.value,
+   password:pass.value
+  })
+ })
+ .then(r=>r.json())
+ .then(d=>{
+  localStorage.setItem('user',d.username);
+  localStorage.setItem('coins',d.coins);
+  localStorage.setItem('vip',d.vip);
+  location='lobby.html';
+ });
+}
+
+function reg(){
+ fetch('/register',{
+  method:'POST',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({
+   username:user.value,
+   password:pass.value
+  })
+ }).then(r=>r.text()).then(alert);
+}
+</script>
