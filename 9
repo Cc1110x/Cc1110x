@@ -1,0 +1,66 @@
+// VIP数据（前端模拟）
+let vipLevel = 0;
+let currentExp = 0;
+let nextExp = 1000;
+
+// 更新UI显示
+function updateVIP() {
+  let percent = (currentExp / nextExp) * 100;
+
+  const progress = document.getElementById("vipProgress");
+  const level = document.getElementById("vipLevel");
+  const current = document.getElementById("vipCurrent");
+  const next = document.getElementById("vipNext");
+
+  if (!progress || !level || !current || !next) {
+    console.log("❌ HTML缺少ID元素");
+    return;
+  }
+
+  progress.style.width = percent + "%";
+  level.innerText = vipLevel;
+  current.innerText = currentExp;
+  next.innerText = nextExp;
+}
+
+// 增加经验
+function gainExp(amount) {
+  currentExp += amount;
+
+  if (currentExp >= nextExp) {
+    currentExp -= nextExp;
+    vipLevel++;
+    nextExp += 1000;
+
+    showLevelUp();
+  }
+
+  updateVIP();
+}
+
+// 升级弹窗
+function showLevelUp() {
+  const popup = document.getElementById("vipPopup");
+
+  if (!popup) return;
+
+  popup.style.display = "block";
+
+  setTimeout(() => {
+    popup.style.display = "none";
+  }, 2000);
+}
+
+// 点击页面增加经验（测试用）
+document.body.addEventListener("click", () => {
+  gainExp(200);
+});
+
+// 页面加载完成执行
+window.onload = function () {
+  updateVIP();
+  console.log("✅ ui.js 已加载");
+};
+<script src="ui.js"></script>
+
+</body>
