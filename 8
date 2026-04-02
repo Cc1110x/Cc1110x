@@ -1,0 +1,46 @@
+const express = require("express");
+const app = express();
+
+// 允许解析JSON
+app.use(express.json());
+
+// 让 public 文件夹可以直接访问
+app.use(express.static("public"));
+
+// 模拟用户数据
+let user = {
+  vipLevel: 0,
+  exp: 0,
+  nextExp: 1000,
+  balance: 0
+};
+
+// 获取用户信息
+app.get("/api/user", (req, res) => {
+  res.json(user);
+});
+
+// 模拟充值（不涉及真钱）
+app.post("/api/recharge", (req, res) => {
+  const { amount } = req.body;
+
+  user.balance += amount;
+  user.exp += amount;
+
+  // 升级逻辑
+  while (user.exp >= user.nextExp) {
+    user.exp -= user.nextExp;
+    user.vipLevel++;
+    user.nextExp += 1000;
+  }
+
+  res.json({
+    success: true,
+    user
+  });
+});
+
+// 启动服务器
+app.listen(3000, () => {
+  console.log("服务器启动：http://localhost:3000");
+});
