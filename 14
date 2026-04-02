@@ -1,0 +1,9 @@
+// 充值功能（模拟）
+function recharge(amount) {
+  balance += amount;
+
+  // 充值=增加经验
+  gainExp(amount);
+
+  console.log("充值成功：", amount);
+}
