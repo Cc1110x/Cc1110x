@@ -1,0 +1,11 @@
+<!-- 余额 -->
+<div class="balance-box">
+  💰 余额：<span id="balance">0</span>
+</div>
+
+<!-- 充值按钮 -->
+<div class="recharge-box">
+  <button onclick="recharge(100)">充值100</button>
+  <button onclick="recharge(500)">充值500</button>
+  <button onclick="recharge(1000)">充值1000</button>
+</div>
