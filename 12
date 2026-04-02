@@ -1,0 +1,30 @@
+/* 余额 */
+.balance-box {
+  margin-top: 20px;
+  font-size: 18px;
+  color: gold;
+}
+
+/* 按钮区域 */
+.recharge-box {
+  margin-top: 15px;
+}
+
+/* 按钮样式 */
+.recharge-box button {
+  margin: 5px;
+  padding: 10px 20px;
+  border: none;
+  background: linear-gradient(90deg, gold, orange);
+  color: #000;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* 按钮悬停 */
+.recharge-box button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px gold;
+}
