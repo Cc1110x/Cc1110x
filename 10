@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>VIP娱乐大厅</title>
+
+  <!-- 引入CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <h1>🎮 VIP娱乐大厅</h1>
+
+  <div class="vip-box" id="vipBox">
+    <div>VIP等级：<span id="vipLevel">0</span></div>
+
+    <div class="vip-bar">
+      <div id="vipProgress" class="vip-progress"></div>
+    </div>
+
+    <div>
+      经验：<span id="vipCurrent">0</span> /
+      <span id="vipNext">1000</span>
+    </div>
+  </div>
+
+  <!-- 升级提示 -->
+  <div id="vipPopup" class="vip-popup">🎉 VIP升级！</div>
+
+  <!-- 引入JS（一定要放最后） -->
+  <script src="ui.js"></script>
+
+</body>
+</html>
