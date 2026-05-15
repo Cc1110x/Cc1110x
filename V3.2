@@ -1,0 +1,193 @@
+from playwright.sync_api import sync_playwright
+import sqlite3
+import re
+import time
+
+DB = "douyin.db"
+
+
+# ======================
+# DB初始化
+# ======================
+def init_db():
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            keyword TEXT,
+            name TEXT,
+            douyin_id TEXT,
+            url TEXT UNIQUE
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+# ======================
+# 保存
+# ======================
+def save(keyword, name, douyin_id, url):
+
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+
+    c.execute("""
+        INSERT OR IGNORE INTO users
+        (keyword, name, douyin_id, url)
+        VALUES (?, ?, ?, ?)
+    """, (keyword, name, douyin_id, url))
+
+    conn.commit()
+    conn.close()
+
+
+# ======================
+# 提取抖音号
+# ======================
+def extract_id(html):
+
+    m = re.search(r"抖音号[:：]\\s*([a-zA-Z0-9_\\-]+)", html)
+
+    return m.group(1) if m else ""
+
+
+# ======================
+# 自动滚动加载（核心）
+# ======================
+def auto_scroll(page):
+
+    last_height = 0
+    same_count = 0
+
+    for _ in range(30):  # 最大滚动轮数
+
+        page.mouse.wheel(0, 3000)
+        time.sleep(2)
+
+        height = page.evaluate("document.body.scrollHeight")
+
+        if height == last_height:
+            same_count += 1
+        else:
+            same_count = 0
+
+        last_height = height
+
+        # 连续3次无变化 → 停止
+        if same_count >= 3:
+            break
+
+
+# ======================
+# 主程序
+# ======================
+def run(keyword):
+
+    init_db()
+
+    with sync_playwright() as p:
+
+        context = p.chromium.launch_persistent_context(
+            user_data_dir="douyin_user",
+            headless=False
+        )
+
+        page = context.new_page()
+
+        url = f"https://www.douyin.com/search/{keyword}"
+
+        print("打开:", url)
+
+        page.goto(url, wait_until="domcontentloaded")
+
+        input("👉 登录  后回车继续...")
+
+        page.wait_for_timeout(3000)
+
+        seen = set()
+        no_new_round = 0
+
+        # ======================
+        # 无限循环翻页
+        # ======================
+        for page_round in range(50):  # 最大轮数保护
+
+            print(f"\n===== 第 {page_round+1} 轮加载 =====")
+
+            auto_scroll(page)
+
+            users = page.locator("a[href*='/user/']")
+            count = users.count()
+
+            new_count = 0
+
+            for i in range(count):
+
+                try:
+                    u = users.nth(i)
+
+                    name = u.inner_text().strip()
+                    href = u.get_attribute("href")
+
+                    if not href:
+                        continue
+
+                    full_url = (
+                        "https://www.douyin.com" + href
+                        if href.startswith("/")
+                        else href
+                    )
+
+                    if full_url in seen:
+                        continue
+
+                    seen.add(full_url)
+                    new_count += 1
+
+                    detail = context.new_page()
+
+                    try:
+                        detail.goto(full_url, wait_until="domcontentloaded", timeout=60000)
+                        detail.wait_for_timeout(2500)
+
+                        html = detail.content()
+                        douyin_id = extract_id(html)
+
+                        save(keyword, name, douyin_id, full_url)
+
+                        print(f"{name} | {douyin_id}")
+
+                    except:
+                        pass
+
+                    finally:
+                        detail.close()
+
+                    time.sleep(0.8)
+
+                except:
+                    continue
+
+            print("本轮新增:", new_count)
+
+            if new_count == 0:
+                no_new_round += 1
+            else:
+                no_new_round = 0
+
+            # 连续3轮无数据 → 停止
+            if no_new_round >= 3:
+                print("没有新数据，停止采集")
+                break
+
+        context.close()
+
+        print("完成")
+
+
+if __name__ == "__main__":
+    run(input("输入关键词："))
