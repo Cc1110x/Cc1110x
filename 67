@@ -1,0 +1,213 @@
+from playwright.sync_api import sync_playwright
+import tkinter as tk
+from tkinter import messagebox
+import pandas as pd
+import threading
+
+data = []
+
+
+def scrape(keyword, text_box, btn):
+
+    global data
+    data = []
+
+    try:
+
+        with sync_playwright() as p:
+
+            context = p.chromium.launch_persistent_context(
+                user_data_dir="douyin_user",
+                headless=False
+            )
+
+            page = context.new_page()
+
+            url = f"https://www.douyin.com/search/{keyword}"
+
+            print("打开页面:", url)
+
+            page.goto(
+                url,
+                wait_until="domcontentloaded",
+                timeout=60000
+            )
+
+            input("登录完成后按回车继续...")
+
+            page.wait_for_timeout(5000)
+
+            for _ in range(8):
+
+                page.mouse.wheel(0, 3000)
+
+                page.wait_for_timeout(2000)
+
+            cards = page.locator(
+                "a[href*='/video/']"
+            )
+
+            count = cards.count()
+
+            print("视频卡片数量:", count)
+
+            seen = set()
+
+            for i in range(count):
+
+                try:
+
+                    card = cards.nth(i)
+
+                    text = card.inner_text().strip()
+
+                    href = card.get_attribute("href")
+
+                    if not text:
+                        continue
+
+                    if len(text) < 5:
+                        continue
+
+                    result = f"{text}\n链接: {href}"
+
+                    if result in seen:
+                        continue
+
+                    seen.add(result)
+
+                    data.append({
+                        "标题": text,
+                        "链接": href
+                    })
+
+                    print(result)
+
+                    text_box.insert(
+                        tk.END,
+                        result + "\n\n"
+                    )
+
+                    text_box.see(tk.END)
+
+                except:
+                    continue
+
+            if data:
+
+                df = pd.DataFrame(data)
+
+                save_path = (
+                    r"C:\Users\Money\OneDrive\Desktop\douyin_result.xlsx"
+                )
+
+                df.to_excel(
+                    save_path,
+                    index=False
+                )
+
+                messagebox.showinfo(
+                    "成功",
+                    f"已导出:\n{save_path}"
+                )
+
+            else:
+
+                messagebox.showwarning(
+                    "提示",
+                    "没有抓到数据"
+                )
+
+            context.close()
+
+    except Exception as e:
+
+        print("ERROR:", e)
+
+        messagebox.showerror(
+            "错误",
+            str(e)
+        )
+
+    finally:
+
+        btn.config(state=tk.NORMAL)
+
+
+def start_scrape(entry, text_box, btn):
+
+    keyword = entry.get().strip()
+
+    if not keyword:
+
+        messagebox.showwarning(
+            "提示",
+            "请输入关键词"
+        )
+
+        return
+
+    text_box.delete("1.0", tk.END)
+
+    btn.config(state=tk.DISABLED)
+
+    threading.Thread(
+        target=scrape,
+        args=(keyword, text_box, btn)
+    ).start()
+
+
+app = tk.Tk()
+
+app.title("抖音关键词采集工具")
+
+app.geometry("800x600")
+
+
+title_label = tk.Label(
+    app,
+    text="输入关键词",
+    font=("Arial", 14)
+)
+
+title_label.pack(pady=10)
+
+
+entry = tk.Entry(
+    app,
+    width=40,
+    font=("Arial", 12)
+)
+
+entry.pack(pady=5)
+
+
+btn = tk.Button(
+    app,
+    text="开始采集",
+    font=("Arial", 12),
+    command=lambda: start_scrape(
+        entry,
+        text_box,
+        btn
+    )
+)
+
+btn.pack(pady=10)
+
+
+text_box = tk.Text(
+    app,
+    height=30,
+    font=("Arial", 10)
+)
+
+text_box.pack(
+    fill=tk.BOTH,
+    expand=True,
+    padx=10,
+    pady=10
+)
+
+
+app.mainloop()
